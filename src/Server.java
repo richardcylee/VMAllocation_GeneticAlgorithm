@@ -1,17 +1,18 @@
 public class Server 
 {
 	private static int numOfServers;
-	private int reliability;
-	private int latency;
-	private int maxVM; //number of VMs in the server
-	private int latencyAdjustment = latency / maxVM; //adjustment value of latency as each VM is added or subtracted
+	private double reliability;
+	private double latency;
+	private int maxVM = 30; //number of VMs in the server
+	private double latencyAdjustment; //adjustment value of latency as each VM is added or subtracted
 	private int counterVM; //number of VMs allocated to the server
 	private int availableVM = maxVM - counterVM; //number of VMs available in the server 
 	
-	Server(int reliability, int latency)
+	Server(double reliability, double latency)
 	{
 		this.reliability = reliability;
 		this.latency = latency;
+		latencyAdjustment = latency / maxVM;
 		numOfServers++;
 	}
 	
@@ -20,12 +21,12 @@ public class Server
 		return numOfServers;
 	}
 	
-	public int getReliability()
+	public double getReliability()
 	{
 		return reliability;
 	}
 	
-	public int getLatency()
+	public double getLatency()
 	{
 		return latency + (latencyAdjustment*counterVM);
 	}
@@ -53,5 +54,10 @@ public class Server
 	public void subtractVM()
 	{
 		counterVM--;
+	}
+
+	public int calculateChromosomeFitness()
+	{
+		return (int)((reliability*1000)-(int)(getLatency()*1000));
 	}
 }
