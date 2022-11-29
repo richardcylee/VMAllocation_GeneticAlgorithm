@@ -167,60 +167,121 @@ public class Population
 			chromosome3BitString = chromosome1BitString.substring(0,1)+chromosome2BitString.substring(1); //perform crossover at 0 | 0 0 
 			chromosome4BitString = chromosome2BitString.substring(0,1)+chromosome1BitString.substring(1); //perform crossover at 0 | 0 0 
 
-			switch (chromosome3BitString) //initializes chromosome2BitString by using chromosome2's server number
+			boolean validInput = false;
+			while(validInput == false)
 			{
-				case "001":
-					chromosome3ServerNumber = 1;
-					break;
-				case "010":
-					chromosome3ServerNumber = 2;
-					break;
-				case "011":
-					chromosome3ServerNumber = 3;
-					break;
-				case "100":
-					chromosome3ServerNumber = 4;
-					break;
-				case "101":
-					chromosome3ServerNumber = 5;
-					break;
-				default:
-					int index = rand.nextInt(3); //generates 0, 1 or 2 (index for substring mutation)
-					char temp = chromosome3BitString.charAt(index);
-					if(temp == '1')
-					{
-						//replace with 0
-					}
-					else //temp == "0"
-					{
-						//replace with 1
-					}
-					break;
+				switch (chromosome3BitString) //initializes chromosome2BitString by using chromosome2's server number
+				{
+					case "001":
+						chromosome3ServerNumber = 1;
+						validInput = true;
+						break;
+					case "010":
+						chromosome3ServerNumber = 2;
+						validInput = true;
+						break;
+					case "011":
+						chromosome3ServerNumber = 3;
+						validInput = true;
+						break;
+					case "100":
+						chromosome3ServerNumber = 4;
+						validInput = true;
+						break;
+					case "101":
+						chromosome3ServerNumber = 5;
+						validInput = true;
+						break;
+					default:
+						int index = rand.nextInt(3); //generates 0, 1 or 2 (index for substring mutation)
+						char temp = chromosome3BitString.charAt(index);
+						if(temp == '1')
+						{
+							if(index == 2)
+							{
+								chromosome3BitString = chromosome3BitString.substring(0,index) + '1';
+							}
+							else
+							{
+								chromosome3BitString = chromosome3BitString.substring(0,index) + '1' + chromosome3BitString.substring(index+1);
+							}
+						}
+						else //temp == "0"
+						{
+							if(index == 2)
+							{
+								chromosome3BitString = chromosome3BitString.substring(0,index) + '0';
+							}
+							else
+							{
+								chromosome3BitString = chromosome3BitString.substring(0,index) + '0' + chromosome3BitString.substring(index+1);
+							}
+						}
+						break;
+				}
 			}
-
-			switch (chromosome4BitString) //initializes chromosome2BitString by using chromosome2's server number
+		
+			boolean validInput2 = false;
+			while(validInput2 == false)
 			{
-				case "001":
-					chromosome3ServerNumber = 1;
-					break;
-				case "010":
-					chromosome3ServerNumber = 2;
-					break;
-				case "011":
-					chromosome3ServerNumber = 3;
-					break;
-				case "100":
-					chromosome3ServerNumber = 4;
-					break;
-				case "101":
-					chromosome3ServerNumber = 5;
-					break;
-				default:
-					//perform mutation
-					break;
-			}
+				switch (chromosome4BitString) //initializes chromosome2BitString by using chromosome2's server number
+				{
+					case "001":
+						chromosome4ServerNumber = 1;
+						validInput2 = true;
+						break;
+					case "010":
+						chromosome4ServerNumber = 2;
+						validInput2 = true;
+						break;
+					case "011":
+						chromosome4ServerNumber = 3;
+						validInput2 = true;
+						break;
+					case "100":
+						chromosome4ServerNumber = 4;
+						validInput2 = true;
+						break;
+					case "101":
+						chromosome4ServerNumber = 5;
+						validInput2 = true;
+						break;
+					default:
+						int index2 = rand.nextInt(3); //generates 0, 1 or 2 (index for substring mutation)
+						char temp2 = chromosome4BitString.charAt(index2);
+						if(temp2 == '1')
+						{
+							if(index2 == 2)
+							{
+								chromosome4BitString = chromosome4BitString.substring(0,index2) + '1';
+							}
+							else
+							{
+								chromosome4BitString = chromosome4BitString.substring(0,index2) + '1' + chromosome4BitString.substring(index2+1);
+							}
+						}
+						else //temp2 == "0"
+						{
+							if(index2 == 2)
+							{
+								chromosome4BitString = chromosome4BitString.substring(0,index2) + '0';
+							}
+							else
+							{
+								chromosome4BitString = chromosome4BitString.substring(0,index2) + '0' + chromosome4BitString.substring(index2+1);
+							}
+						}
+						break;
+				}
 
-			//crossover algorithm + mutate if no improvement 
+			//we have 2 new children that are in a valid server placement
+			//obtain fitness of children, evaluate against parents
+			//if parents' fitness > children's fitness, mutate once and re-evaluate
+				//if still no improvement, don't change population array
+			//else replace parents' server number with children's server number
+			//increment generation counter
+			}
 		}
 	}
 }
+
