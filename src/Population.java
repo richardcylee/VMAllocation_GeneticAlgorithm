@@ -2,335 +2,341 @@ import java.util.Random;
 
 public class Population 
 {
-	private final int MAXGEN = 500; // initialize based on the maximum number of generations allowed
-	private int[] generationFitness = new int[MAXGEN]; // array to hold fitness
-	private int[][] population; // [User ID][User VM #][Server ID] – User ID and User VM # are provided
-									// sequentially but Server ID is randomly generated
-	private int sumOfVMsReq;
+	private final int MAXGEN = 300; //initialize based on the maximum number of generations allowed
+	private int[] generationFitness = new int[MAXGEN]; //array to hold sum of fitness for all chromosomes in each generation
+	private int[][] population; //[User ID][User VM #][Server ID] – User ID and User VM # are provided sequentially but Server ID is randomly generated
+	private int sumOfVMsReq; //total number of user requests
+	private int userColumn = 0, vmColumn = 1, serverColumn = 2, fitnessColumn = 3; //column index in the 2D array
 	
-	Population(int numOfServers, User userArr[], Server s1, Server s2, Server s3, Server s4, Server s5) 
+	Population(int numOfServers, User userArr[], Server s1, Server s2, Server s3, Server s4, Server s5) //constructor that initializes the population array
 	{
-		sumOfVMsReq = User.getSumOfVMsReq();
-		population = new int [sumOfVMsReq][4]; 
+		sumOfVMsReq = User.getSumOfVMsReq(); //obtain total sum of user requests
+		population = new int [sumOfVMsReq][4]; //initializes 2D population array
 		Random rand = new Random(); //used to generate random integer 
 		
 		int row = 0;
-		for(int n=0;n<User.getNumOfUsers();n++) 
+		for(int n=0;n<User.getNumOfUsers();n++) //iterates through the number of User objects created
 		{
-			for(int i=0;i<userArr[n].getNumOfVMsReq();i++) //userArray[0].getNumOfVMsReq() 10 -> 4 -> 6
+			for(int i=0;i<userArr[n].getNumOfVMsReq();i++) //iterates through the required VMs per User object
 			{
-				population[row][0] = n+1;//initializes user number
-				population[row][1] = i+1;//initializes VM number
-				population[row][2] = rand.nextInt(5) + 1; //generates random integer from 1 to 5 (inclusive)
+				population[row][userColumn] = n+1;//initializes user number
+				population[row][vmColumn] = i+1;//initializes VM number
+				population[row][serverColumn] = rand.nextInt(5) + 1; //generates random integer from 1 to 5 (inclusive) to represent the server number
 
-				switch (population[row][2]) 
+				switch (population[row][serverColumn]) //takes the assigned server number and incremenets counterVM in the corresponding server
 				{
 					case 1:
-						s1.addVM();
+						checkAddVM(row, s1, s1, s2, s3, s4, s5);
 						break;
 					case 2: 
-						s2.addVM();
+						checkAddVM(row, s2, s1, s2, s3, s4, s5);
 						break;
 					case 3: 
-						s3.addVM();
+						checkAddVM(row, s3, s1, s2, s3, s4, s5);
 						break;
 					case 4: 
-						s4.addVM();
+						checkAddVM(row, s4, s1, s2, s3, s4, s5);
 						break;
 					case 5: 
-						s5.addVM();
+						checkAddVM(row, s5, s1, s2, s3, s4, s5);
 						break;
 					default:
-						System.err.print("PROGRAM CRASHING BYE1");
+						System.err.print("Error @ Population constructor");
 						System.exit(0);
 				}
-
 				row++;
 			}
 		}
+		calculatePopulationFitness(userArr, s1, s2, s3, s4, s5); //calculate population fitness, initializes [row][3] of the 2D population array
+		printArray(); //prints initial population's array
+		generationFitness[0] = getGenerationalFitness(); //initializes first generation's generational fitness (sum)
+	}
 
-		int row2 = 0;
-		for(int n=0;n<User.getNumOfUsers();n++) 
+	public void geneticAlgorithm(User userArr[], Server s1, Server s2, Server s3, Server s4, Server s5) //algorithm for running the GA
+	{
+		Random rand = new Random();
+		int curGen = 1; //initializes curGen to keep track of generations of GA
+		
+		while(curGen < MAXGEN) //repeats GA until MAXGEN is reached
 		{
-			for(int i=0;i<userArr[n].getNumOfVMsReq();i++) //userArray[0].getNumOfVMsReq() 10 -> 4 -> 6
+			int chromosome1Index = rand.nextInt(population.length); //first parent chromosome's row index - generates a random number from 1 to population's length
+			int chromosome2Index = rand.nextInt(population.length); //second parent chromosome's row index - generates a random number from 1 to population's length
+			while(chromosome2Index == chromosome1Index) //while both parents are the same (same row/index), re-generate chromosome2Index
 			{
-				switch (population[row2][2]) 
-				{
-					case 1:
-						population[row2][3] = s1.calculateChromosomeFitness();
-						break;
-					case 2: 
-						population[row2][3] = s2.calculateChromosomeFitness();
-						break;
-					case 3: 
-						population[row2][3] = s3.calculateChromosomeFitness();
-						break;
-					case 4: 
-						population[row2][3] = s4.calculateChromosomeFitness();
-						break;
-					case 5: 
-						population[row2][3] = s5.calculateChromosomeFitness();
-						break;
-					default:
-						System.err.print("PROGRAM CRASHING BYE2");
-						System.exit(0);
-				}
-				
-				row2++;
+				chromosome2Index = rand.nextInt(population.length);
+			}
+
+			int parent1ServerNumber = population[chromosome1Index][serverColumn]; //initializes parent1ServerNumber (parent) from the population array
+			int parent2ServerNumber = population[chromosome2Index][serverColumn]; //initializes parent2ServerNumber (parent) from the population array
+
+			int parentPopulationFitness = getGenerationalFitness(); //gets generational fitness with parent chromosomes in population, to compare with childPopulationFitness
+
+			getServerObject(parent1ServerNumber, s1, s2, s3, s4, s5).subtractVM(); //subtracts a VM for parent1ServerNumber (parent) so the VM can be re-allocated
+			getServerObject(parent2ServerNumber, s1, s2, s3, s4, s5).subtractVM(); //subtracts a VM for parent2ServerNumber (parent) so the VM can be re-allocated
+
+			String parent1BitString = getChromosomeBitString(chromosome1Index); //initializes parent1BitString (parent) by using chromosome1Index's server number
+			String parent2BitString = getChromosomeBitString(chromosome2Index); //initializes parent2BitString (parent) by using chromosome2Index's server number
+
+			//performs crossover (crossover at 0 | 0 0 ) on parent chromosomes and stores child chromosomes' bit-string representation of resulting server numbers
+			String child1BitString = parent1BitString.substring(0,1)+parent2BitString.substring(1); 
+			String child2BitString = parent2BitString.substring(0,1)+parent1BitString.substring(1); 
+
+			int child1ServerNumber = getServerNumber(child1BitString); //initializes child1ServerNumber (child) based on the corresponding bit-string representation
+			int child2ServerNumber = getServerNumber(child2BitString); //initializes child2ServerNumber (child) based on the corresponding bit-string representation
+
+			//insert child's server number into parents' server number
+			population[chromosome1Index][serverColumn] = child1ServerNumber;
+			population[chromosome2Index][serverColumn] = child2ServerNumber;
+
+			//increment VM for chromosome3's (child) server to ensure there is space. If not, randomly generates a server number to replace with
+			checkAddVM(chromosome1Index, getServerObject(child1ServerNumber, s1, s2, s3, s4, s5), s1, s2, s3, s4, s5); 
+			checkAddVM(chromosome2Index, getServerObject(child2ServerNumber, s1, s2, s3, s4, s5), s1, s2, s3, s4, s5); 
+
+			//the above would result in randomized server number if there are no available VMs, therefore corresponding child1ServerNumber and child2ServerNumber has to be re-initialized in case it was re-generated randomly
+			child1ServerNumber = population[chromosome1Index][serverColumn];
+			child2ServerNumber = population[chromosome2Index][serverColumn];
+
+			calculatePopulationFitness(userArr, s1, s2, s3, s4, s5); //recalculate fitness for every chromosome
+
+			int childPopulationFitness = getGenerationalFitness(); //gets generational fitness with child chromosomes in population, to compare with parentPopulationFitness
+
+			//compare population fitness of parent with child - if parent population fitness was higher, restore parent server numbers
+			if(parentPopulationFitness > childPopulationFitness)
+			{
+				population[chromosome1Index][serverColumn] = parent1ServerNumber; //restore parent server numbers
+				population[chromosome2Index][serverColumn] = parent2ServerNumber; //restore parent server numbers
+
+				getServerObject(child1ServerNumber, s1, s2, s3, s4, s5).subtractVM(); //subtracts a VM for child chromosome so parents' server numbers can be restored
+				getServerObject(child2ServerNumber, s1, s2, s3, s4, s5).subtractVM(); //subtracts a VM for child chromosome so parents' server numbers can be restored
+				checkAddVM(chromosome1Index, getServerObject(parent1ServerNumber, s1, s2, s3, s4, s5), s1, s2, s3, s4, s5); //restores parents' server for VM allocation
+				checkAddVM(chromosome2Index, getServerObject(parent2ServerNumber, s1, s2, s3, s4, s5), s1, s2, s3, s4, s5); //restores parents' server for VM allocation
+
+				calculatePopulationFitness(userArr, s1, s2, s3, s4, s5); //recalculate fitness for every chromosome
+			} //else do nothing as the population has improved
+		
+			printArray(); //prints out the population array to illustrate each chromosome (configuration) in the population
+			generationFitness[curGen] = getGenerationalFitness(); //inserts new generation's generational fitness (sum) into array
+			curGen++;
+		} //end of GA
+		printMaxGenerationFitness(); //prints out generation fitness value
+	}
+
+	public void checkAddVM(int row, Server tryAdd, Server s1, Server s2, Server s3, Server s4, Server s5)
+	{
+		if(tryAdd.addVM() == false) //unsuccessful attempt at adding VM due to max capacity
+		{
+			Random rand = new Random();
+			population[row][serverColumn] = rand.nextInt(5) + 1; //generate new server number to try
+
+			switch (population[row][serverColumn]) //takes the newly assigned server number and incremenets counterVM in the corresponding server
+			{
+				case 1:
+					checkAddVM(row, s1, s1, s2, s3, s4, s5);
+					break;
+				case 2: 
+					checkAddVM(row, s2, s1, s2, s3, s4, s5);
+					break;
+				case 3: 
+					checkAddVM(row, s3, s1, s2, s3, s4, s5);
+					break;
+				case 4: 
+					checkAddVM(row, s4, s1, s2, s3, s4, s5);
+					break;
+				case 5: 
+					checkAddVM(row, s5, s1, s2, s3, s4, s5);
+					break;
+				default:
+					System.err.print("Error @ Population constructor");
+					System.exit(0);
+			}
+		} //else do nothing as attempt to add VM was successful
+	}
+
+	public void calculatePopulationFitness(User userArr[], Server s1, Server s2, Server s3, Server s4, Server s5) //initializes [row][fitnessColumn] to store the fitness values of each chromosome in the population
+	{
+		for(int n=0;n<population.length;n++)
+		{
+			switch (population[n][serverColumn]) 
+			{
+				case 1:
+					population[n][fitnessColumn] = s1.calculateChromosomeFitness();
+					break;
+				case 2: 
+					population[n][fitnessColumn] = s2.calculateChromosomeFitness();
+					break;
+				case 3: 
+					population[n][fitnessColumn] = s3.calculateChromosomeFitness();
+					break;
+				case 4: 
+					population[n][fitnessColumn] = s4.calculateChromosomeFitness();
+					break;
+				case 5: 
+					population[n][fitnessColumn] = s5.calculateChromosomeFitness();
+					break;
+				default:
+					System.err.print("Error @ calculatePopulationFitness");
+					System.exit(0);
 			}
 		}
 	}
-	
-	public void printArray()
+
+	public int getGenerationalFitness() //calculate existing generation fitness and store into generationFitness array
 	{
-		System.out.println();
-		for(int i=0;i<sumOfVMsReq;i++)
+		int sum = 0;
+		for(int n=0;n<population.length;n++) 
 		{
-			for(int j=0;j<4;j++)
+			sum += population[n][fitnessColumn];
+		}
+		return sum;
+	}
+
+	public Server getServerObject(int chromosomeServerNumber, Server s1, Server s2, Server s3, Server s4, Server s5)
+	{
+		switch (chromosomeServerNumber)
+		{
+			case 1:
+				return s1;
+			case 2:
+				return s2;
+			case 3:
+				return s3;
+			case 4:
+				return s4;
+			case 5:
+				return s5;
+			default:
+				System.err.print("Error @ getServerObject");
+				System.exit(0);
+				Server error = new Server(1, 1); //shouldn't reach
+				return error; //shouldn't reach
+		}
+	}
+
+	public String getChromosomeBitString(int chromosomeIndex)
+	{
+		switch (population[chromosomeIndex][serverColumn]) //initializes parent1BitString by using chromosome1Index's server number
+		{
+			case 1:
+				return "001";
+			case 2:
+				return "010";
+			case 3:
+				return "011";
+			case 4:
+				return "100";
+			case 5:
+				return "101";
+			default:
+				System.exit(0);
+				return "Error @ getChromosomeBitString"; //shouldn't reach
+		}
+	}
+
+	public int getServerNumber(String chromosomeBitString) //returns server number integer from bit-string representation
+	{
+		Random rand = new Random(); //used to mutate bit string if invalid server number is obtained from crossover
+
+		boolean validInput = false;
+		while(validInput == false) //initializes chromosomeServerNumber by using chromosomeBitString
+		{
+			switch (chromosomeBitString) 
 			{
-				System.out.print(population[i][j] + " ");
+				case "001":
+					return 1;
+				case "010":
+					return 2;
+				case "011":
+					return 3;
+				case "100":
+					return 4;
+				case "101":
+					return 5;
+				default: //chromosomeBitString is not a valid representation of a server number, mutate a random bit
+					int index = rand.nextInt(3); //generates 0, 1 or 2 (index for substring mutation)
+					if(chromosomeBitString.charAt(index) == '1')
+					{
+						if(index == 2)
+						{
+							chromosomeBitString = chromosomeBitString.substring(0,index) + '0';
+						}
+						else
+						{
+							chromosomeBitString = chromosomeBitString.substring(0,index) + '0' + chromosomeBitString.substring(index+1);
+						}
+					}
+					else //chromosomeBitString.charAt(index) == "0"
+					{
+						if(index == 2)
+						{
+							chromosomeBitString = chromosomeBitString.substring(0,index) + '1';
+						}
+						else
+						{
+							chromosomeBitString = chromosomeBitString.substring(0,index) + '1' + chromosomeBitString.substring(index+1);
+						}
+					}
+			}
+		}
+		return 0; //this should never execute
+	}
+
+	public void printArray() //prints out the population array: column 1 = user number, column 2 = vm number, column 3 = server number, column 4 = fitness value
+	{
+		System.out.println("\n	        U  VM  S  F");
+
+		for(int i=0;i<sumOfVMsReq;i++) //iterate through the rows
+		{
+			if(i<9) 
+			{
+				System.out.print("Chromosome " + (i+1) + ":   ");
+			}
+			else if(i<99)
+			{
+				System.out.print("Chromosome " + (i+1) + ":  ");
+			}
+			else
+			{
+				System.out.print("Chromosome " + (i+1) + ": ");
+			}
+
+			for(int j=0;j<4;j++) //iterate through the columns
+			{
+				if(j==0) //if printing User number
+				{
+					if(population[i][userColumn] >= 10)
+					{
+						System.out.print(population[i][j] + " ");
+					}
+					else
+					{
+						System.out.print(population[i][j] + "  ");
+					}
+				}
+				else if(j==1) //if printing VM number
+				{
+					if(population[i][vmColumn] >= 10)
+					{
+						System.out.print(population[i][j] + "  ");
+					}
+					else
+					{
+						System.out.print(population[i][j] + "   ");
+					}
+				}
+				else //printing Server number or fitness value
+				{
+					System.out.print(population[i][j] + "  ");
+				}
 			}
 			System.out.println();
 		}
 	}
 
-	public void geneticAlgorithm(User userArr[], Server s1, Server s2, Server s3, Server s4, Server s5)
+	public void printMaxGenerationFitness()
 	{
-		Random rand = new Random();
-		int chromosome1Index, chromosome2Index;
-		String chromosome1BitString = " ", chromosome2BitString = " ";
-		int curGen = 0;
-		
-		while(curGen < MAXGEN)
-		{
-			int sum = 0;
-			for(int n=0;n<population.length;n++)
-			{
-				sum += population[n][3];
-			}
-			generationFitness[curGen] = sum;
-
-			chromosome1Index = rand.nextInt(population.length); //generates a random number from 1 to population's length
-			chromosome2Index = rand.nextInt(population.length); //generates a random number from 1 to population's length
-			while(chromosome2Index == chromosome1Index) //if chromosome2 is the same as chromosome1Index (same row), re-generate chromosome2
-			{
-				chromosome2Index = rand.nextInt(population.length);
-			}
-
-			switch (population[chromosome1Index][2]) //initializes chromosome1BitString by using chromosome1Index's server number
-			{
-				case 1:
-					chromosome1BitString = "001";
-					break;
-				case 2:
-					chromosome1BitString = "010";
-					break;
-				case 3:
-					chromosome1BitString = "011";
-					break;
-				case 4:
-					chromosome1BitString = "100";
-					break;
-				case 5:
-					chromosome1BitString = "101";
-					break;
-				default:
-					break;
-			}
-
-			switch (population[chromosome2Index][2]) //initializes chromosome2BitString by using chromosome2's server number
-			{
-				case 1:
-					chromosome2BitString = "001";
-					break;
-				case 2:
-					chromosome2BitString = "010";
-					break;
-				case 3:
-					chromosome2BitString = "011";
-					break;
-				case 4:
-					chromosome2BitString = "100";
-					break;
-				case 5:
-					chromosome2BitString = "101";
-					break;
-				default:
-					break;
-			}
-
-			String chromosome3BitString, chromosome4BitString;
-			int chromosome3ServerNumber = 0, chromosome4ServerNumber = 0;
-			chromosome3BitString = chromosome1BitString.substring(0,1)+chromosome2BitString.substring(1); //perform crossover at 0 | 0 0 
-			chromosome4BitString = chromosome2BitString.substring(0,1)+chromosome1BitString.substring(1); //perform crossover at 0 | 0 0 
-
-			boolean validInput = false;
-			while(validInput == false) //initializes chromosome3ServerNumber by using chromosome3BitString
-			{
-				switch (chromosome3BitString) 
-				{
-					case "001":
-						chromosome3ServerNumber = 1;
-						validInput = true;
-						break;
-					case "010":
-						chromosome3ServerNumber = 2;
-						validInput = true;
-						break;
-					case "011":
-						chromosome3ServerNumber = 3;
-						validInput = true;
-						break;
-					case "100":
-						chromosome3ServerNumber = 4;
-						validInput = true;
-						break;
-					case "101":
-						chromosome3ServerNumber = 5;
-						validInput = true;
-						break;
-					default:
-						System.out.println("I'm stuck 1");
-						int index = rand.nextInt(3); //generates 0, 1 or 2 (index for substring mutation)
-						char temp = chromosome3BitString.charAt(index);
-						if(temp == '1')
-						{
-							if(index == 2)
-							{
-								chromosome3BitString = chromosome3BitString.substring(0,index) + '0';
-							}
-							else
-							{
-								chromosome3BitString = chromosome3BitString.substring(0,index) + '0' + chromosome3BitString.substring(index+1);
-							}
-						}
-						else //temp == "0"
-						{
-							if(index == 2)
-							{
-								chromosome3BitString = chromosome3BitString.substring(0,index) + '1';
-							}
-							else
-							{
-								chromosome3BitString = chromosome3BitString.substring(0,index) + '1' + chromosome3BitString.substring(index+1);
-							}
-						}
-						break;
-				}
-			}
-		
-			boolean validInput2 = false;
-			while(validInput2 == false) //initializes chromosome4ServerNumber by using chromosome4BitString
-			{
-				switch (chromosome4BitString) 
-				{
-					case "001":
-						chromosome4ServerNumber = 1;
-						validInput2 = true;
-						break;
-					case "010":
-						chromosome4ServerNumber = 2;
-						validInput2 = true;
-						break;
-					case "011":
-						chromosome4ServerNumber = 3;
-						validInput2 = true;
-						break;
-					case "100":
-						chromosome4ServerNumber = 4;
-						validInput2 = true;
-						break;
-					case "101":
-						chromosome4ServerNumber = 5;
-						validInput2 = true;
-						break;
-					default:
-						System.out.println("I'm stuck 2");
-						int index2 = rand.nextInt(3); //generates 0, 1 or 2 (index for substring mutation)
-						char temp2 = chromosome4BitString.charAt(index2);
-						if(temp2 == '1')
-						{
-							if(index2 == 2)
-							{
-								chromosome4BitString = chromosome4BitString.substring(0,index2) + '0';
-							}
-							else
-							{
-								chromosome4BitString = chromosome4BitString.substring(0,index2) + '0' + chromosome4BitString.substring(index2+1);
-							}
-						}
-						else //temp2 == "0"
-						{
-							if(index2 == 2)
-							{
-								chromosome4BitString = chromosome4BitString.substring(0,index2) + '1';
-							}
-							else
-							{
-								chromosome4BitString = chromosome4BitString.substring(0,index2) + '1' + chromosome4BitString.substring(index2+1);
-							}
-						}
-						break;
-				}
-			}
-
-			//store parents' fitness & server values in case it needs to be restored
-			int chromosome1Fitness = population[chromosome1Index][3]; 
-			int chromosome2Fitness = population[chromosome2Index][3];
-			int chromosome1Server = population[chromosome1Index][2];
-			int chromosome2Server = population[chromosome2Index][2];
-
-			//insert child's server number
-			population[chromosome1Index][2] = chromosome3ServerNumber;
-			population[chromosome2Index][2] = chromosome4ServerNumber;
-
-			//recalculate fitness for every chromosome
-			for(int n=0;n<population.length;n++)
-			{
-				switch (population[n][2]) 
-					{
-						case 1:
-							population[n][3] = s1.calculateChromosomeFitness();
-							break;
-						case 2: 
-							population[n][3] = s2.calculateChromosomeFitness();
-							break;
-						case 3: 
-							population[n][3] = s3.calculateChromosomeFitness();
-							break;
-						case 4: 
-							population[n][3] = s4.calculateChromosomeFitness();
-							break;
-						case 5: 
-							population[n][3] = s5.calculateChromosomeFitness();
-							break;
-						default:
-							System.err.print("PROGRAM CRASHING BYE3");
-							System.exit(0);
-					}
-			}
-
-			int chromosome3Fitness = population[chromosome1Index][3];
-			int chromosome4Fitness = population[chromosome2Index][3];
-
-			//compare new fitness value of children to parents' stored fitness value
-			if((chromosome1Fitness + chromosome2Fitness) > (chromosome3Fitness + chromosome4Fitness)) //if parents' fitness is > children's fitness
-			{
-				population[chromosome1Index][2] = chromosome1Server;
-				population[chromosome1Index][3] = chromosome1Fitness;
-				population[chromosome2Index][2] = chromosome2Server;
-				population[chromosome2Index][3] = chromosome2Fitness;
-			} //else do nothing as the population has improved
-			
-			printArray();
-
-			curGen++;
-		}
-
-		for(int n=0;n<generationFitness.length;n++)
+		for(int n=0;n<generationFitness.length;n++) //after GA, prints out generationFitness for each generation
 		{
 			System.out.println(generationFitness[n]);
 		}
 	}
 }
-
