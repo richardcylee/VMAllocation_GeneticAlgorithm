@@ -39,5 +39,10 @@ While current generation < MAXGEN
   
 **Example Data**  
 S = 5, U = 5, VM per User = 5 (total of 25), MAXGEN = 500 (to better illustrate plateau)
+S1: R = 0.95, L = 0.15  
+S2: R = 0.93, L = 0.20  
+S3: R = 0.91, L = 0.11  
+S4: R = 0.87, L = 0.17  
+S5: R = 0.85, L = 0.19  
 ![image](https://user-images.githubusercontent.com/92837310/206956271-b72c0aa1-75b2-40a4-8236-8d1b384a6a65.png)
 
