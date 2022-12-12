@@ -38,7 +38,7 @@ While current generation < MAXGEN
   101  
   
 **Example Data**  
-S = 5, U = 5, VM per User = 5 (total of 25), MAXGEN = 500 (to better illustrate plateau)
+S = 5, U = 5, VM per User = 5 (total of 25), MAXGEN = 500 (to better illustrate plateau)  
 S1: R = 0.95, L = 0.15  
 S2: R = 0.93, L = 0.20  
 S3: R = 0.91, L = 0.11  
