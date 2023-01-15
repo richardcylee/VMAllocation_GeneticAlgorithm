@@ -5,7 +5,7 @@ A stochastic approach to VM allocations that optimizes reliability and latency.
 Runs on console only.  
 
 **Version Number**  
-1.0  
+1.1  
 
 **Specifications**  
 5 Servers (hard-coded reliability & latency values)
