@@ -9,8 +9,8 @@ public class Main
 		int numOfUsers = 0; //stores number of users
 
 		System.out.print("Please enter the number of users (max 10): "); //prompt user for input for number of users
-		boolean validInput = false;
-		while(validInput == false)
+		boolean validInput1 = false;
+		while(validInput1 == false)
 		{
 			try
 			{
@@ -18,7 +18,7 @@ public class Main
 				if(numOfUsers > 0 && numOfUsers <= 10) //# of Users is between 1 and 10 (inclusive)
 				{
 					User.setNumOfUsers(numOfUsers); //initializes numOfUsers static variable in User class
-					validInput = true; //condition to exit while-loop
+					validInput1 = true; //condition to exit while-loop
 				}
 				else
 				{

@@ -52,6 +52,96 @@ public class Population
 		generationFitness[0] = getGenerationalFitness(); //initializes first generation's generational fitness (sum)
 	}
 
+	public void calculatePopulationFitness(User userArr[], Server s1, Server s2, Server s3, Server s4, Server s5) //initializes [row][fitnessColumn] to store the fitness values of each chromosome in the population
+	{
+		for(int n=0;n<population.length;n++)
+		{
+			switch (population[n][serverColumn]) 
+			{
+				case 1:
+					population[n][fitnessColumn] = s1.calculateChromosomeFitness();
+					break;
+				case 2: 
+					population[n][fitnessColumn] = s2.calculateChromosomeFitness();
+					break;
+				case 3: 
+					population[n][fitnessColumn] = s3.calculateChromosomeFitness();
+					break;
+				case 4: 
+					population[n][fitnessColumn] = s4.calculateChromosomeFitness();
+					break;
+				case 5: 
+					population[n][fitnessColumn] = s5.calculateChromosomeFitness();
+					break;
+				default:
+					System.err.print("Error @ calculatePopulationFitness");
+					System.exit(0);
+			}
+		}
+	}
+
+	public void printArray() //prints out the population array: column 1 = user number, column 2 = vm number, column 3 = server number, column 4 = fitness value
+	{
+		System.out.println("\n	        U  VM  S  F");
+
+		for(int i=0;i<sumOfVMsReq;i++) //iterate through the rows
+		{
+			if(i<9) 
+			{
+				System.out.print("Chromosome " + (i+1) + ":   ");
+			}
+			else if(i<99)
+			{
+				System.out.print("Chromosome " + (i+1) + ":  ");
+			}
+			else
+			{
+				System.out.print("Chromosome " + (i+1) + ": ");
+			}
+
+			for(int j=0;j<4;j++) //iterate through the columns
+			{
+				if(j==0) //if printing User number
+				{
+					if(population[i][userColumn] >= 10)
+					{
+						System.out.print(population[i][j] + " ");
+					}
+					else
+					{
+						System.out.print(population[i][j] + "  ");
+					}
+				}
+				else if(j==1) //if printing VM number
+				{
+					if(population[i][vmColumn] >= 10)
+					{
+						System.out.print(population[i][j] + "  ");
+					}
+					else
+					{
+						System.out.print(population[i][j] + "   ");
+					}
+				}
+				else //printing Server number or fitness value
+				{
+					System.out.print(population[i][j] + "  ");
+				}
+			}
+			System.out.println();
+		}
+	}
+
+	public int getGenerationalFitness() //calculate existing generation fitness and store into generationFitness array
+	{
+		int sum = 0;
+		for(int n=0;n<population.length;n++) 
+		{
+			sum += population[n][fitnessColumn];
+		}
+		return sum;
+	}
+
 	public void geneticAlgorithm(User userArr[], Server s1, Server s2, Server s3, Server s4, Server s5) //algorithm for running the GA
 	{
 		Random rand = new Random();
@@ -121,6 +211,28 @@ public class Population
 		printMaxGenerationFitness(); //prints out generation fitness value
 	}
 
+	public Server getServerObject(int chromosomeServerNumber, Server s1, Server s2, Server s3, Server s4, Server s5)
+	{
+		switch (chromosomeServerNumber)
+		{
+			case 1:
+				return s1;
+			case 2:
+				return s2;
+			case 3:
+				return s3;
+			case 4:
+				return s4;
+			case 5:
+				return s5;
+			default:
+				System.err.print("Error @ getServerObject");
+				System.exit(0);
+				Server error = new Server(1, 1); //shouldn't reach
+				return error; //shouldn't reach
+		}
+	}
+
 	public void checkAddVM(int row, Server tryAdd, Server s1, Server s2, Server s3, Server s4, Server s5)
 	{
 		if(tryAdd.addVM() == false) //unsuccessful attempt at adding VM due to max capacity
@@ -150,66 +262,6 @@ public class Population
 					System.exit(0);
 			}
 		} //else do nothing as attempt to add VM was successful
-	}
-
-	public void calculatePopulationFitness(User userArr[], Server s1, Server s2, Server s3, Server s4, Server s5) //initializes [row][fitnessColumn] to store the fitness values of each chromosome in the population
-	{
-		for(int n=0;n<population.length;n++)
-		{
-			switch (population[n][serverColumn]) 
-			{
-				case 1:
-					population[n][fitnessColumn] = s1.calculateChromosomeFitness();
-					break;
-				case 2: 
-					population[n][fitnessColumn] = s2.calculateChromosomeFitness();
-					break;
-				case 3: 
-					population[n][fitnessColumn] = s3.calculateChromosomeFitness();
-					break;
-				case 4: 
-					population[n][fitnessColumn] = s4.calculateChromosomeFitness();
-					break;
-				case 5: 
-					population[n][fitnessColumn] = s5.calculateChromosomeFitness();
-					break;
-				default:
-					System.err.print("Error @ calculatePopulationFitness");
-					System.exit(0);
-			}
-		}
-	}
-
-	public int getGenerationalFitness() //calculate existing generation fitness and store into generationFitness array
-	{
-		int sum = 0;
-		for(int n=0;n<population.length;n++) 
-		{
-			sum += population[n][fitnessColumn];
-		}
-		return sum;
-	}
-
-	public Server getServerObject(int chromosomeServerNumber, Server s1, Server s2, Server s3, Server s4, Server s5)
-	{
-		switch (chromosomeServerNumber)
-		{
-			case 1:
-				return s1;
-			case 2:
-				return s2;
-			case 3:
-				return s3;
-			case 4:
-				return s4;
-			case 5:
-				return s5;
-			default:
-				System.err.print("Error @ getServerObject");
-				System.exit(0);
-				Server error = new Server(1, 1); //shouldn't reach
-				return error; //shouldn't reach
-		}
 	}
 
 	public String getChromosomeBitString(int chromosomeIndex)
@@ -278,58 +330,6 @@ public class Population
 			}
 		}
 		return 0; //this should never execute
-	}
-
-	public void printArray() //prints out the population array: column 1 = user number, column 2 = vm number, column 3 = server number, column 4 = fitness value
-	{
-		System.out.println("\n	        U  VM  S  F");
-
-		for(int i=0;i<sumOfVMsReq;i++) //iterate through the rows
-		{
-			if(i<9) 
-			{
-				System.out.print("Chromosome " + (i+1) + ":   ");
-			}
-			else if(i<99)
-			{
-				System.out.print("Chromosome " + (i+1) + ":  ");
-			}
-			else
-			{
-				System.out.print("Chromosome " + (i+1) + ": ");
-			}
-
-			for(int j=0;j<4;j++) //iterate through the columns
-			{
-				if(j==0) //if printing User number
-				{
-					if(population[i][userColumn] >= 10)
-					{
-						System.out.print(population[i][j] + " ");
-					}
-					else
-					{
-						System.out.print(population[i][j] + "  ");
-					}
-				}
-				else if(j==1) //if printing VM number
-				{
-					if(population[i][vmColumn] >= 10)
-					{
-						System.out.print(population[i][j] + "  ");
-					}
-					else
-					{
-						System.out.print(population[i][j] + "   ");
-					}
-				}
-				else //printing Server number or fitness value
-				{
-					System.out.print(population[i][j] + "  ");
-				}
-			}
-			System.out.println();
-		}
 	}
 
 	public void printMaxGenerationFitness()
